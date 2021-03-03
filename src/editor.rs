@@ -41,33 +41,6 @@ pub struct Editor {
 }
 
 impl Editor {
-    pub fn default() -> Self {
-        let args: Vec<String> = env::args().collect();
-        let mut initial_status = String::from("HELP: Ctrl-Q to quit");
-        let document = if args.len() > 1 {
-            let file_name = &args[1];
-            let doc = Document::open(&file_name);
-            if doc.is_ok() {
-                doc.unwrap()
-            } else {
-                initial_status = format!("ERR: Could not open file: {}", file_name);
-                Document::default()
-            }
-        }
-        else {
-            Document::default()
-        };
-
-        Self {
-            should_quit: false,
-            terminal: Terminal::default().expect("Failed to initialize terminal"),
-            cursor_position: Position::default(),
-            document,
-            offset: Position::default(),
-            status_message: StatusMessage::from(initial_status),
-        }
-    }
-
     pub fn run(&mut self) {
         loop {
             if let Err(error) = self.refresh_screen() {
@@ -82,6 +55,32 @@ impl Editor {
         }
     }
 
+    pub fn default() -> Self {
+        let args: Vec<String> = env::args().collect();
+        let mut initial_status = String::from("HELP: Ctrl-Q to quit");
+        let document = if args.len() > 1 {
+            let file_name = &args[1];
+            let doc = Document::open(&file_name);
+            if doc.is_ok() {
+                doc.unwrap()
+            } else {
+                initial_status = format!("ERR: Could not open file: {}", file_name);
+                Document::default()
+            }
+        } else {
+            Document::default()
+        };
+
+        Self {
+            should_quit: false,
+            terminal: Terminal::default().expect("Failed to initialize terminal"),
+            cursor_position: Position::default(),
+            document,
+            offset: Position::default(),
+            status_message: StatusMessage::from(initial_status),
+        }
+    }
+ 
     fn refresh_screen(&self) -> Result<(), std::io::Error> {
         Terminal::cursor_hide();
         Terminal::cursor_position(&Position::default());
@@ -143,8 +142,7 @@ impl Editor {
 
     fn move_cursor(&mut self, key: Key) {
         let terminal_height = self.terminal.size().height as usize;
-        let Position { mut x, mut y } = self.cursor_position;
-        let size = self.terminal.size();
+        let Position { mut y, mut x } = self.cursor_position;
         let height = self.document.len();
         let mut width = if let Some(row) = self.document.row(y) {
             row.len()
@@ -160,16 +158,16 @@ impl Editor {
                 }
             },
             Key::Left => {
-              if x > 0 {
-                  x -= 1;
-              }  else if y > 0 {
-                  y -= 1;
-                  x = if let Some(row) = self.document.row(y) {
-                      row.len()
-                  } else {
-                      0
-                  }
-              }
+                if x > 0 {
+                    x -= 1;
+                } else if y > 0 {
+                    y -= 1;
+                    if let Some(row) = self.document.row(y) {
+                        x = row.len();
+                    } else {
+                        x = 0;
+                    }
+                }
             },
             Key::Right => {
                 if x < width {
@@ -208,8 +206,7 @@ impl Editor {
             x = width;
         }
 
-
-        self.cursor_position = Position { x: x, y : y};
+        self.cursor_position = Position { x, y }
     }
 
     fn draw_welcome_message(&self) {
@@ -222,13 +219,13 @@ impl Editor {
         welcome_message.truncate(width);         
         println!("{}\r", welcome_message);
     }
-    fn draw_row(&self, row: &Row) {
+    pub fn draw_row(&self, row: &Row) {
         let width = self.terminal.size().width as usize;
 
         let start = self.offset.x;
         let end = self.offset.x + width;
         let row = row.render(start, end);
-        println!("{}\r", row);
+        println!("{}\r", row)
     }
 
     fn draw_rows(&self) {
@@ -239,8 +236,7 @@ impl Editor {
                 self.draw_row(row);
             } else if self.document.is_empty() && terminal_row == height / 3 {
                 self.draw_welcome_message();
-            }
-            else {
+            } else {
                 println!("~\r");
             }
         }
@@ -271,8 +267,8 @@ impl Editor {
         Terminal::set_bg_color(STATUS_BG_COLOR);
         Terminal::set_fg_color(STATUS_FG_COLOR);
         println!("{}\r", status);
-        Terminal::reset_bg_color();
         Terminal::reset_fg_color();
+        Terminal::reset_bg_color();
     }
 
     fn draw_message_bar(&self) {

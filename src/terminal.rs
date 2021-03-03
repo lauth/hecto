@@ -1,9 +1,9 @@
 use crate::Position;
 use std::io::{self, stdout, Write};
+use termion::color;
 use termion::event::Key;
 use termion::input::TermRead;
 use termion::raw::{IntoRawMode, RawTerminal};
-use termion::color;
 
 pub struct Size {
     pub width: u16,
@@ -36,26 +36,6 @@ impl Terminal {
         print!("{}", termion::clear::All);
     }
 
-    pub fn clear_current_line() {
-        print!("{}", termion::clear::CurrentLine);
-    }
-
-    pub fn set_bg_color(color: color::Rgb) {
-        println!("{}", color::Bg(color));
-    }
-
-    pub fn reset_bg_color() {
-        println!("{}", color::Bg(color::Reset));
-    }
-
-    pub fn set_fg_color(color: color::Rgb) {
-        println!("{}", color::Fg(color));
-    }
-
-    pub fn reset_fg_color() {
-        println!("{}", color::Fg(color::Reset));
-    }
-
     #[allow(clippy::cast_possible_truncation)]
     pub fn cursor_position(position: &Position) {
         let Position {mut x, mut y} = position;
@@ -85,4 +65,24 @@ impl Terminal {
     pub fn cursor_show() {
         print!("{}", termion::cursor::Show);
     }
+    pub fn clear_current_line() {
+        print!("{}", termion::clear::CurrentLine);
+    }
+
+    pub fn set_bg_color(color: color::Rgb) {
+        print!("{}", color::Bg(color));
+    }
+
+    pub fn reset_bg_color() {
+        print!("{}", color::Bg(color::Reset));
+    }
+
+    pub fn set_fg_color(color: color::Rgb) {
+        print!("{}", color::Fg(color));
+    }
+
+    pub fn reset_fg_color() {
+        print!("{}", color::Fg(color::Reset));
+    }
+
 }
