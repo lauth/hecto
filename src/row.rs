@@ -179,7 +179,7 @@ impl Row {
     }
 
 
-    fn highlight_match(&mut self, word: Option<&str>) {
+    fn highlight_match(&mut self, word: &Option<String>) {
         if let Some(word) = word {
             if word.is_empty() {
                 return;
@@ -335,6 +335,36 @@ impl Row {
         false
     }
 
+    #[allow(clippy::indexing_slicing, clippy::integer_arithmetic)]
+    fn highlight_multiline_comment(
+        &mut self,
+        index: &mut usize,
+        opts: &HighlightingOptions,
+        c: char,
+        chars: &[char],
+    ) -> bool {
+        if opts.comments() && c == '/' && *index < chars.len() {
+            if let Some(next_char) = chars.get(index.saturating_add(1)) {
+                if *next_char == '*' {
+                    let closing_index =
+                        if let Some(closing_index) = self.string[*index + 2..].find("*/") {
+                            *index + closing_index + 4
+                        } else {
+                            chars.len()
+                        };
+
+                    for _ in *index..closing_index {
+                        self.highlighting.push(highlighting::Type::MultilineComment);
+                        *index += 1;
+                    }
+
+                    return true;
+                }
+            };
+        }
+        false
+    }
+
     fn highlight_string(
         &mut self,
         index: &mut usize,
@@ -392,13 +422,39 @@ impl Row {
         false
     }
 
-    pub fn highlight(&mut self, opts: &HighlightingOptions, word: Option<&str>) {
+    #[allow(clippy::indexing_slicing, clippy::integer_arithmetic)]
+    pub fn highlight(
+        &mut self,
+        opts: &HighlightingOptions,
+        word: &Option<String>,
+        start_with_comment: bool,
+    ) -> bool {
         self.highlighting = Vec::new();
         let chars: Vec<char> = self.string.chars().collect();
         let mut index = 0;
+        let mut in_ml_comment = start_with_comment;
+
+        if in_ml_comment {
+            let closing_index = if let Some(closing_index) = self.string.find("*/") {
+                closing_index + 2
+            } else {
+                chars.len()
+            };
+            for _ in 0..closing_index {
+                self.highlighting.push(highlighting::Type::MultilineComment);
+            }
+            index = closing_index;
+        }
+
         while let Some(c) = chars.get(index) {
+            if self.highlight_multiline_comment(&mut index, &opts, *c, &chars) {
+                in_ml_comment = true;
+                continue;
+            }
+            in_ml_comment = false;
             if self.highlight_char(&mut index, opts, *c, &chars)
                 || self.highlight_comment(&mut index, opts, *c, &chars)
+                || self.highlight_multiline_comment(&mut index, opts, *c, &chars)
                 || self.highlight_primary_keywords(&mut index, opts, &chars)
                 || self.highlight_secondary_keywords(&mut index, opts, &chars)
                 || self.highlight_string(&mut index, opts, *c, &chars)
@@ -410,6 +466,10 @@ impl Row {
             index += 1;
         }
         self.highlight_match(word);
+        if in_ml_comment && &self.string[self.string.len().saturating_sub(2)..] != "*/" {
+            return true;
+        }
+        false
     }
 }
 

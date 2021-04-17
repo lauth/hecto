@@ -6,6 +6,9 @@ impl FileType {
     pub fn name(&self) -> String {
         self.name.clone()
     }
+				/* Commentaire
+   multi
+   lignes */ 
 
     // Single line comment.
 	   pub fn test() -> void {
