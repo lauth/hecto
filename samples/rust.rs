@@ -9,6 +9,8 @@ impl FileType {
 
 	   pub fn test() -> void {
 								println!("Ceci est une string");
+        let char c = 'x';
+								let char c2 = '\t';
 				}
 }
 
