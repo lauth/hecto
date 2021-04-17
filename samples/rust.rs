@@ -7,10 +7,11 @@ impl FileType {
         self.name.clone()
     }
 
+    // Single line comment.
 	   pub fn test() -> void {
 								println!("Ceci est une string");
         let char c = 'x';
-								let char c2 = '\t';
+								let char c2 = '\t'; // tabulation.
 				}
 }
 
