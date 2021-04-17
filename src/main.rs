@@ -20,6 +20,7 @@ use editor::Editor;
 pub use terminal::Terminal;
 pub use editor::Position;
 pub use filetype::FileType;
+pub use filetype::HighlightingOptions;
 pub use editor::SearchDirection;
 pub use row::Row;
 
